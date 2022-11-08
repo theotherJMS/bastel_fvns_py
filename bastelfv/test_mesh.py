@@ -1,6 +1,8 @@
 import unittest
 from dataclasses import dataclass
 import torch as th
+import mesh as msh
+from torch.testing import assert_close
 
 
 ################################################################################
@@ -48,42 +50,42 @@ class MockQuadmesh:
     ], dtype=th.double)
 
     i_neighb_node: th.IntTensor = th.tensor([
-        [1, 5],
-        [0, 2, 6],
-        [1, 3, 7],
-        [2, 4, 8],
-        [3, 9],
+        [1, 5, -1, -1],
+        [0, 2, 6, -1],
+        [1, 3, 7, -1],
+        [2, 4, 8, -1],
+        [3, 9, -1, -1],
 
-        [0, 6, 10],
+        [0, 6, 10, -1],
         [1, 5, 7, 11],
         [2, 6, 8, 12],
         [3, 7, 9, 13],
-        [4, 8, 14],
+        [4, 8, 14, -1],
 
-        [5, 11, 15],
+        [5, 11, 15, -1],
         [6, 10, 12, 16],
         [7, 11, 13, 17],
         [8, 12, 14, 18],
-        [9, 13, 19],
+        [9, 13, 19, -1],
 
-        [10, 16],
-        [11, 15, 17],
-        [12, 16, 18],
-        [13, 17, 19],
-        [14, 18],
+        [10, 16, -1, -1],
+        [11, 15, 17, -1],
+        [12, 16, 18, -1],
+        [13, 17, 19, -1],
+        [14, 18, -1, -1],
     ], dtype=th.int)
 
     i_elem_per_node: th.IntTensor = th.tensor([
-        [0], [0, 1], [1, 2], [2, 3], [3],
-        [0, 4], [0, 1, 4, 5], [1, 2, 5, 6], [2, 3, 6, 7], [3, 7],
-        [4, 8], [4, 5, 8, 9], [5, 6, 9, 10], [6, 7, 10, 11], [7, 11],
-        [8], [8, 9], [9, 10], [10, 11], [11]
+        [0, -1, -1, -1], [0, 1, -1, -1], [1, 2, -1, -1], [2, 3, -1, -1], [3, -1, -1, -1],
+        [0, 4, -1, -1], [0, 1, 4, 5], [1, 2, 5, 6], [2, 3, 6, 7], [3, 7, -1, -1],
+        [4, 8, -1, -1], [4, 5, 8, 9], [5, 6, 9, 10], [6, 7, 10, 11], [7, 11, -1, -1],
+        [8, -1, -1, -1], [8, 9, -1, -1], [9, 10, -1, -1], [10, 11, -1, -1], [11, -1, -1, -1]
     ], dtype=th.int)
 
     i_neighb_elem: th.IntTensor = th.tensor([
-        [1, 4], [0, 2, 5], [1, 3, 6], [2, 7],
-        [0, 5, 8], [1, 4, 6, 9], [2, 5, 7, 10], [3, 6, 11],
-        [4, 9], [5, 8, 10], [6, 9, 11], [7, 10],
+        [1, 4, -1, -1], [0, 2, 5, -1], [1, 3, 6, -1], [2, 7, -1, -1],
+        [0, 5, 8, -1], [1, 4, 6, 9], [2, 5, 7, 10], [3, 6, 11, -1],
+        [4, 9, -1, -1], [5, 8, 10, -1], [6, 9, 11, -1], [7, 10, -1, -1],
     ], dtype=th.int)
 
     i_bdry_face: th.IntTensor = th.tensor([
@@ -96,6 +98,26 @@ class MockQuadmesh:
     bdry_marker: th.IntTensor = th.tensor(
         [0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3],
         dtype=th.int)
+
+    i_nodes_per_face: th.IntTensor = th.tensor([
+        [0, 1],
+        [0, 4],
+        [1, 2],
+        [1, 5],
+        [2, 3],
+        [2, 6],
+        [3, 7],
+        [4, 5],
+        [4, 8],
+        [5, 6],
+        [5, 9],
+        [6, 7],
+        [6, 10],
+        [7, 11],
+        [8, 9],
+        [9, 10],
+        [10, 11],
+    ], dtype=th.int)
 
 
 ################################################################################
@@ -129,16 +151,30 @@ class MockPrimaryMesh:
         [1.0, 0.2],
         [1.2, 0.2],
         [1.4, 0.2],
-        # Layer 3 (shorter)
-
+        # Layer 2 (shorter)
     ])
 
 
 ################################################################################
 ################################################################################
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
-        self.assertEqual(True, False)  # add assertion here
+class TestMeshConstructor(unittest.TestCase):
+    def test_quadmesh(self):
+        mesh = msh.Mesh(x_node=MockQuadmesh.x_node, i_corners=MockQuadmesh.i_quad)
+        self.assertEqual(mesh.nnodes, 20)
+        self.assertEqual(mesh.nelems, 12)
+        assert_close(mesh.x_node, MockQuadmesh.x_node)
+        assert_close(mesh.i_corners, MockQuadmesh.i_quad)
+
+
+################################################################################
+################################################################################
+class TestCalcNCorners(unittest.TestCase):
+    def test_quadmesh(self):
+        mesh = msh.Mesh(x_node=MockQuadmesh.x_node, i_corners=MockQuadmesh.i_quad)
+        n_corners = msh.calc_n_corners(mesh)
+        self.assertEqual(n_corners.ndim, 1)
+        self.assertEqual(12, n_corners.shape[0])
+        #self.assertTrue(th.allclose(n_corners, 4))
 
 
 ################################################################################
