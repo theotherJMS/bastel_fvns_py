@@ -72,16 +72,32 @@ def calc_n_corners(i_corners: th.IntTensor):
 
 ################################################################################
 ################################################################################
-def calc_elems_per_node(nnodes, i_corners, n_corners, n_max_elems_per_node=DEFAULT_N_MAX_ELEMS_PER_NODE):
-    nelems = i_corners.size(-2)
+def calc_elems_per_node(nnodes, i_corners, n_corners, n_max_elems_per_node=DEFAULT_N_MAX_ELEMS_PER_NODE,
+                        out_i_elems_per_node=None, out_n_elems_per_node=None):
+    if out_i_elems_per_node is None:
+        out_i_elems_per_node = th.full((nnodes, n_max_elems_per_node), -1, dtype=INDEX)
+    if out_n_elems_per_node is None:
+        out_n_elems_per_node = th.zeros((nnodes,), dtype=INDEX)
 
-    i_elems_per_node = th.full((nnodes, n_max_elems_per_node), -1, dtype=INDEX)
-    n_elems_per_node = th.zeros((nnodes,), dtype=INDEX)
-
-    for ielem in range(nelems):
+    for ielem in range(i_corners.size(-2)):
         for icorner in range(n_corners[ielem]):
             inode = i_corners[ielem, icorner]
-            i_elems_per_node[inode, n_elems_per_node[inode]] = ielem
-            n_elems_per_node[inode] += 1
+            out_i_elems_per_node[inode, out_n_elems_per_node[inode]] = ielem
+            out_n_elems_per_node[inode] += 1
 
-    return i_elems_per_node, n_elems_per_node
+    return out_i_elems_per_node, out_n_elems_per_node
+
+
+################################################################################
+################################################################################
+def calc_faces(nnodes, i_corners, n_corners, out_i_nodes_per_face=None):
+    n_faces = th.sum(n_corners)
+    if out_i_nodes_per_face is None:
+        out_i_nodes_per_face = th.full((n_faces, 2), -1, dtype=INDEX)
+
+    for ielem in range(i_corners.size(-2)):
+        for icorner in range(n_corners[ielem]):
+            icurr = i_corners[ielem, icorner]
+            inext = i_corners[ielem, (icorner + 1) % n_corners[ielem]]
+            out_i_nodes_per_face[ielem+icorner,0] = min(icurr,inext)
+            out_i_nodes_per_face[ielem + icorner, 1] = max(icurr,inext)
