@@ -108,7 +108,7 @@ class MockQuadMesh:
         [15, 10], [10, 5], [5, 0]
     ], dtype=INDEX)
 
-    bdry_marker: th.IntTensor = th.tensor(
+    bdry_id: th.IntTensor = th.tensor(
         [0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3],
         dtype=INDEX)
 
@@ -198,6 +198,16 @@ class MockTriMesh:
         1, 3, 3, 3, 3, 2, 2, 3, 3, 3, 3, 2, 2, 2, 3, 2, 3, 1,
     ], dtype=INDEX)
 
+    i_bdry_face: th.IntTensor = th.tensor([
+        [0, 1], [1, 2], [2, 3],
+        [3, 7], [7, 11], [11, 15],
+        [15, 14], [14, 13], [13, 12],
+        [12, 8], [8, 4], [4, 0],
+    ], dtype=INDEX)
+    bdry_id: th.IntTensor = th.tensor([
+        0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3,
+    ], dtype=INDEX)
+
 
 ################################################################################
 ################################################################################
@@ -281,6 +291,15 @@ class MockMixedMesh:
         2, 3, 3, 2, 3, 3, 2,
     ], dtype=INDEX)
 
+    i_bdry_face: th.IntTensor = th.tensor([
+        [18, 17], [17, 16], [16, 15], [15, 14], [14, 13], [13, 12],
+        [12, 5], [5, 0], [0, 11], [11, 18],
+        [1, 4], [4, 3], [3, 2], [2, 1],
+    ], dtype=INDEX)
+    bdry_id: th.IntTensor = th.tensor([
+        0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2,
+    ], dtype=INDEX)
+
 
 ################################################################################
 ################################################################################
@@ -294,27 +313,27 @@ class TestMeshConstructor(unittest.TestCase):
 
     ############################################################################
     def test_mixed_mesh(self):
-        mesh = msh.Mesh(x_node=MockMixedMesh.x_node, i_corners=MockMixedMesh.i_corners)
+        mesh = msh.Mesh(x_node=MockMixedMesh.x_node, corners=MockMixedMesh.i_corners)
         self.assertEqual(19, mesh.nnodes)
         self.assertEqual(18, mesh.nelems)
         assert_close(mesh.x_node, MockMixedMesh.x_node)
-        assert_close(mesh.i_corners, MockMixedMesh.i_corners)
+        assert_close(mesh.corners, MockMixedMesh.i_corners)
 
     ############################################################################
     def test_quadmesh(self):
-        mesh = msh.Mesh(x_node=MockQuadMesh.x_node, i_corners=MockQuadMesh.i_corners)
+        mesh = msh.Mesh(x_node=MockQuadMesh.x_node, corners=MockQuadMesh.i_corners)
         self.assertEqual(mesh.nnodes, 20)
         self.assertEqual(mesh.nelems, 12)
         assert_close(mesh.x_node, MockQuadMesh.x_node)
-        assert_close(mesh.i_corners, MockQuadMesh.i_corners)
+        assert_close(mesh.corners, MockQuadMesh.i_corners)
 
     ############################################################################
     def test_trimesh(self):
-        mesh = msh.Mesh(x_node=MockTriMesh.x_node, i_corners=MockTriMesh.i_corners)
+        mesh = msh.Mesh(x_node=MockTriMesh.x_node, corners=MockTriMesh.i_corners)
         self.assertEqual(16, mesh.nnodes)
         self.assertEqual(18, mesh.nelems)
         assert_close(mesh.x_node, MockTriMesh.x_node)
-        assert_close(mesh.i_corners, MockTriMesh.i_corners)
+        assert_close(mesh.corners, MockTriMesh.i_corners)
 
 
 ################################################################################
