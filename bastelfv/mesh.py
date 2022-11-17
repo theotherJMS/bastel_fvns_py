@@ -1,4 +1,3 @@
-import numpy as np
 from dataclasses import dataclass
 import torch as th
 from bastelfv.util import DATA, INDEX

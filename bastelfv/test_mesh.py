@@ -79,8 +79,46 @@ class MockQuadMesh:
         [14, 18, -1, -1],
     ], dtype=INDEX)
     n_neighb_nodes: th.IntTensor = th.tensor([
-        2, 3, 3, 3, 2, 3, 4, 4, 4, 3, 3, 4, 4, 4, 3, 2, 3, 3, 3, 2,
+        2, 3, 3, 3, 2,
+        3, 4, 4, 4, 3,
+        3, 4, 4, 4, 3,
+        2, 3, 3, 3, 2,
     ], dtype=INDEX)
+
+    icrow_neighb_nodes: th.Tensor = th.tensor([
+        0, 2, 5, 8, 11,
+        13, 16, 20, 24, 28,
+        31, 34, 38, 42, 46,
+        49, 51, 54, 57, 60,
+        62,
+    ], dtype=INDEX)
+    icol_neighb_nodes: th.Tensor = th.tensor([
+        1, 5,
+        0, 2, 6,
+        1, 3, 7,
+        2, 4, 8,
+        3, 9,
+
+        0, 6, 10,
+        1, 5, 7, 11,
+        2, 6, 8, 12,
+        3, 7, 9, 13,
+        4, 8, 14,
+
+        5, 11, 15,
+        6, 10, 12, 16,
+        7, 11, 13, 17,
+        8, 12, 14, 18,
+        9, 13, 19,
+
+        10, 16,
+        11, 15, 17,
+        12, 16, 18,
+        13, 17, 19,
+        14, 18,
+    ], dtype=INDEX)
+    csr_neighb_nodes: th.Tensor = th.sparse_csr_tensor(icrow_neighb_nodes, icol_neighb_nodes,
+                                                       th.ones(62, dtype=th.bool), (20, 20))
 
     i_elems_per_node: th.IntTensor = th.tensor([
         [0, -1, -1, -1], [0, 1, -1, -1], [1, 2, -1, -1], [2, 3, -1, -1], [3, -1, -1, -1],
@@ -174,6 +212,22 @@ class MockTriMesh:
     n_neighb_nodes: th.IntTensor = th.tensor([
         2, 4, 4, 3, 5, 6, 6, 3, 3, 6, 6, 5, 3, 4, 4, 2
     ], dtype=INDEX)
+    icrow_neighb_nodes: th.IntTensor = th.tensor([
+        0, 2, 6, 10, 13, 18, 24, 30, 33, 36, 42, 48, 53, 56, 60, 64, 66,
+    ], dtype=INDEX)
+    icol_neighb_nodes: th.IntTensor = th.tensor([
+        1, 4, 0, 2, 4, 5,
+        1, 3, 5, 6, 2, 6, 7,
+        0, 1, 5, 8, 9, 1, 2, 4, 6, 9, 10,
+        2, 3, 5, 7, 10, 11, 3, 6, 11,
+        4, 9, 12, 4, 5, 8, 10, 12, 13,
+        5, 6, 9, 11, 13, 14, 6, 7, 10, 14, 15,
+        8, 9, 13, 9, 10, 12, 14,
+        10, 11, 13, 15, 11, 14,
+    ], dtype=INDEX)
+    csr_neighb_nodes: th.Tensor = th.sparse_csr_tensor(
+        icrow_neighb_nodes, icol_neighb_nodes, values=th.ones(66, dtype=th.bool), size=(16, 16)
+    )
 
     i_elems_per_node: th.IntTensor = th.tensor([
         [0, -1, -1, -1, -1, -1], [0, 1, 2, -1, -1, -1],
@@ -477,10 +531,26 @@ class TestCalcNNeighbNodes(unittest.TestCase):
 class TestCreateNeighbNodesCSR(unittest.TestCase):
 
     ############################################################################
-    def test(self):
+    def test_mixedmesh(self):
         mock = MockMixedMesh()
         neighb_nodes_csr = msh.create_neighb_nodes_csr(mock.n_neighb_nodes, mock.i_neighb_nodes)
         v_act = neighb_nodes_csr.values()
+
+        assert_close(neighb_nodes_csr, mock.csr_neighb_nodes)
+
+    ############################################################################
+    def test_quadmesh(self):
+        mock = MockQuadMesh()
+        neighb_nodes_csr = msh.create_neighb_nodes_csr(mock.n_neighb_nodes, mock.i_neighb_nodes)
+        # v_act = neighb_nodes_csr.values()
+
+        assert_close(neighb_nodes_csr, mock.csr_neighb_nodes)
+
+   ############################################################################
+    def test_trimesh(self):
+        mock = MockTriMesh()
+        neighb_nodes_csr = msh.create_neighb_nodes_csr(mock.n_neighb_nodes, mock.i_neighb_nodes)
+        # v_act = neighb_nodes_csr.values()
 
         assert_close(neighb_nodes_csr, mock.csr_neighb_nodes)
 
