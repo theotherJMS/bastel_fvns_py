@@ -556,5 +556,35 @@ class TestCreateNeighbNodesCSR(unittest.TestCase):
 
 ################################################################################
 ################################################################################
+class TestCalcNNeighbElems(unittest.TestCase):
+
+    ############################################################################
+    def test_mixed_mesh(self):
+        mock = MockMixedMesh()
+        i_neighb_elems, n_neighb_elems = msh.calc_neighb_elems(mock.i_corners, mock.n_corners, mock.i_elems_per_node,
+                                                               mock.n_elems_per_node, 4)
+
+        assert_close(n_neighb_elems, mock.n_neighb_elems)
+        assert_close(i_neighb_elems, mock.i_neighb_elems)
+
+    ############################################################################
+    def test_quad_mesh(self):
+        mock = MockQuadMesh()
+        i_neighb_elems, n_neighb_elems = msh.calc_neighb_elems(mock.i_corners, mock.n_corners, mock.i_elems_per_node,
+                                                               mock.n_elems_per_node, 4)
+        assert_close(n_neighb_elems, mock.n_neighb_elems)
+        assert_close(i_neighb_elems, mock.i_neighb_elems)
+
+    ############################################################################
+    def test_tri_mesh(self):
+        mock = MockTriMesh()
+        i_neighb_elems, n_neighb_elems = msh.calc_neighb_elems(mock.i_corners, mock.n_corners, mock.i_elems_per_node,
+                                                               mock.n_elems_per_node, 4)
+        assert_close(n_neighb_elems, mock.n_neighb_elems)
+        assert_close(i_neighb_elems, mock.i_neighb_elems)
+
+
+################################################################################
+################################################################################
 if __name__ == '__main__':
     unittest.main()

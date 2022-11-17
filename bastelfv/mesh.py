@@ -141,3 +141,34 @@ def create_neighb_nodes_csr(n_neighb_nodes, i_neighb_nodes, csr_neighb_nodes=Non
         csr_neighb_nodes = th.sparse_csr_tensor(icrow, icol, dummy, size=(nnodes, nnodes))
 
     return csr_neighb_nodes
+
+
+################################################################################
+################################################################################
+def calc_neighb_elems(corners, n_corners, i_elems_per_node, n_elems_per_node,
+                      n_max_neighb_elems=DEFAULT_N_MAX_NEIGHB_ELEMS, out_i_neighb_elems=None,
+                      out_n_neighb_elems=None):
+    nelems = corners.size(-2)
+    if out_i_neighb_elems is None:
+        out_i_neighb_elems = th.full((nelems, n_max_neighb_elems), -1, dtype=INDEX)
+    if out_n_neighb_elems is None:
+        out_n_neighb_elems = th.zeros(nelems, dtype=INDEX)
+
+    for ielem in range(nelems):
+        for icorner in range(n_corners[ielem]):
+
+            inode = corners[ielem, icorner]
+            inext = corners[ielem, (icorner + 1) % n_corners[ielem]]
+            neighb_candidates = i_elems_per_node[inode, :n_elems_per_node[inode]]
+
+            for ineighb in range(n_elems_per_node[inode]):
+                ielem_neighb = neighb_candidates[ineighb]
+                if ielem_neighb == ielem:
+                    continue
+                for icorner_neighb in range(n_corners[ielem_neighb]):
+                    if corners[ielem_neighb, icorner_neighb] == inext:
+                        out_i_neighb_elems[ielem, out_n_neighb_elems[ielem]] = ielem_neighb
+                        out_n_neighb_elems[ielem] += 1
+                        break
+
+    return out_i_neighb_elems, out_n_neighb_elems
