@@ -172,7 +172,7 @@ class MockTriMesh:
         [10, 11, 13, 15, -1, -1], [11, 14, -1, -1, -1, -1]
     ], dtype=INDEX)
     n_neighb_nodes: th.IntTensor = th.tensor([
-        [2, 4, 4, 3, 5, 6, 6, 3, 3, 6, 6, 5, 3, 4, 4, 2]
+        2, 4, 4, 3, 5, 6, 6, 3, 3, 6, 6, 5, 3, 4, 4, 2
     ], dtype=INDEX)
 
     i_elems_per_node: th.IntTensor = th.tensor([
@@ -300,6 +300,35 @@ class MockMixedMesh:
         0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2,
     ], dtype=INDEX)
 
+    i_neighb_nodes: th.Tensor = th.tensor([
+        [1, 5, 11, -1, -1, -1],
+        [0, 2, 4, 6, 10, -1],
+        [1, 3, 7, -1, -1, -1],
+        [2, 4, 8, -1, -1, -1],
+        [1, 3, 9, -1, -1, -1],
+
+        [0, 6, 12, -1, -1, -1],
+        [1, 5, 7, 12, 13, -1],
+        [2, 6, 8, 13, 14, -1],
+        [3, 7, 9, 14, 15, 16],
+        [4, 8, 10, 16, 17, -1],
+        [1, 9, 11, 17, 18, -1],
+        [0, 10, 18, -1, -1, -1],
+
+        [5, 6, 13, -1, -1, -1],
+        [6, 7, 12, 14, -1, -1],
+        [7, 8, 13, 15, -1, -1],
+        [8, 14, 16, -1, -1, -1],
+        [8, 9, 15, 17, -1, -1],
+        [9, 10, 16, 18, -1, -1],
+        [10, 11, 17, -1, -1, -1]
+    ], dtype=INDEX)
+    n_neighb_nodes: th.Tensor = th.tensor([
+        3, 5, 3, 3, 3,
+        3, 5, 5, 6, 5, 5, 3,
+        3, 4, 4, 3, 4, 4, 3,
+    ], dtype=INDEX)
+
 
 ################################################################################
 ################################################################################
@@ -380,6 +409,46 @@ class TestCalcElemsPerNode(unittest.TestCase):
             msh.calc_elems_per_node(16, MockTriMesh.i_corners, MockTriMesh.n_corners, 6)
         assert_close(i_elems_per_node, MockTriMesh.i_elems_per_node)
         assert_close(n_elems_per_node, MockTriMesh.n_elems_per_node)
+
+
+################################################################################
+################################################################################
+class TestCalcNNeighbNodes(unittest.TestCase):
+
+    ############################################################################
+    def test_mixed_mesh(self):
+        i_neighb_nodes, n_neighb_nodes = msh.calc_neighb_nodes(MockMixedMesh.x_node.size(0), MockMixedMesh.i_corners,
+                                                               MockMixedMesh.n_corners, 8)
+        mock = MockMixedMesh()
+        assert_close(n_neighb_nodes, MockMixedMesh.n_neighb_nodes)
+        assert_close(i_neighb_nodes[:, :6], MockMixedMesh.i_neighb_nodes)
+
+    ############################################################################
+    def test_quad_mesh(self):
+        mock = MockQuadMesh()
+        i_neighb_nodes, n_neighb_nodes = msh.calc_neighb_nodes(mock.x_node.size(0), mock.i_corners,
+                                                               mock.n_corners, 8)
+        assert_close(n_neighb_nodes, mock.n_neighb_nodes)
+        assert_close(i_neighb_nodes[:, :4], mock.i_neighb_nodes)
+
+    ############################################################################
+    def test_tri_mesh(self):
+        mock = MockTriMesh()
+        i_neighb_nodes, n_neighb_nodes = msh.calc_neighb_nodes(mock.x_node.size(0), mock.i_corners,
+                                                               mock.n_corners, 8)
+        assert_close(n_neighb_nodes, mock.n_neighb_nodes)
+        assert_close(i_neighb_nodes[:, :6], mock.i_neighb_nodes)
+
+
+################################################################################
+################################################################################
+class TestCreateNeighbNodesCSR(unittest.TestCase):
+
+    ############################################################################
+    def test(self):
+        mock = MockMixedMesh()
+        neighb_nodes_csr = msh.create_neighb_nodes_csr(mock.n_neighb_nodes, mock.i_neighb_nodes)
+        pass
 
 
 ################################################################################

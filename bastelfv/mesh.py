@@ -6,7 +6,7 @@ from bastelfv.util import DATA, INDEX
 DEFAULT_N_MAX_CORNERS: INDEX = 4
 DEFAULT_N_MAX_ELEMS_PER_NODE: INDEX = 4
 DEFAULT_N_MAX_NEIGHB_ELEMS: INDEX = 4
-DEFAULT_N_MAX_NEIGHB_NODES: INDEX = 4
+DEFAULT_N_MAX_NEIGHB_NODES: INDEX = 8
 
 
 ################################################################################
@@ -86,3 +86,58 @@ def calc_elems_per_node(nnodes, corners, n_corners, n_max_elems_per_node=DEFAULT
             out_n_elems_per_node[inode] += 1
 
     return out_i_elems_per_node, out_n_elems_per_node
+
+
+################################################################################
+################################################################################
+def calc_neighb_nodes(nnodes, corners, n_corners, n_max_neighb_nodes=DEFAULT_N_MAX_NEIGHB_NODES,
+                      out_i_neighb_nodes=None, out_n_neighb_nodes=None):
+    if out_i_neighb_nodes is None:
+        out_i_neighb_nodes = th.full((nnodes, n_max_neighb_nodes), -1, dtype=INDEX)
+    if out_n_neighb_nodes is None:
+        out_n_neighb_nodes = th.zeros(nnodes, dtype=INDEX)
+
+    for ielem in range(corners.size(0)):
+        for icorner in range(n_corners[ielem]):
+            inode = corners[ielem, icorner]
+            iprev = corners[ielem, (icorner - 1) % n_corners[ielem]]
+            inext = corners[ielem, (icorner + 1) % n_corners[ielem]]
+            if iprev not in out_i_neighb_nodes[inode]:
+                out_i_neighb_nodes[inode, out_n_neighb_nodes[inode]] = iprev
+                out_n_neighb_nodes[inode] += 1
+            if inext not in out_i_neighb_nodes[inode]:
+                out_i_neighb_nodes[inode, out_n_neighb_nodes[inode]] = inext
+                out_n_neighb_nodes[inode] += 1
+
+    # Temporarily shift -1 entries so they are not sorted to the left.
+    mask = out_i_neighb_nodes < 0
+    out_i_neighb_nodes[mask] += nnodes + 1
+    out_i_neighb_nodes, _ = th.sort(out_i_neighb_nodes, dim=-1)
+    out_i_neighb_nodes[mask] -= nnodes + 1
+
+    return out_i_neighb_nodes, out_n_neighb_nodes
+
+
+################################################################################
+################################################################################
+def create_neighb_nodes_csr(n_neighb_nodes, i_neighb_nodes, csr_neighb_nodes=None):
+    nnodes = n_neighb_nodes.size(0)
+    n_neighbs = th.sum(n_neighb_nodes)
+    if csr_neighb_nodes is not None:
+        icrow = csr_neighb_nodes.crow_indices()
+        icol = csr_neighb_nodes.col_indices()
+    else:
+        icrow = th.zeros(nnodes+1,dtype=INDEX)
+        icol = th.zeros(n_neighbs, dtype=INDEX)
+        dummy = th.zeros(n_neighbs, dtype=th.bool)
+
+    icrow[0] = 0
+    icrow[1:] = th.cumsum(n_neighb_nodes, 0)
+
+    for inode in range(nnodes):
+        icol[icrow[inode]:icrow[inode+1]] = i_neighb_nodes[inode,:n_neighb_nodes[inode]]
+
+    if csr_neighb_nodes is None:
+        csr_neighb_nodes = th.sparse_csr_tensor(icrow, icol, dummy)
+
+    return csr_neighb_nodes
