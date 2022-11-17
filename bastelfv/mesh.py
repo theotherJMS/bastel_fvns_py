@@ -126,18 +126,19 @@ def create_neighb_nodes_csr(n_neighb_nodes, i_neighb_nodes, csr_neighb_nodes=Non
     if csr_neighb_nodes is not None:
         icrow = csr_neighb_nodes.crow_indices()
         icol = csr_neighb_nodes.col_indices()
+        dummy = csr_neighb_nodes.values()
     else:
-        icrow = th.zeros(nnodes+1,dtype=INDEX)
+        icrow = th.zeros(nnodes + 1, dtype=INDEX)
         icol = th.zeros(n_neighbs, dtype=INDEX)
-        dummy = th.zeros(n_neighbs, dtype=th.bool)
+        dummy = th.ones(n_neighbs, dtype=th.bool)
 
     icrow[0] = 0
     icrow[1:] = th.cumsum(n_neighb_nodes, 0)
 
     for inode in range(nnodes):
-        icol[icrow[inode]:icrow[inode+1]] = i_neighb_nodes[inode,:n_neighb_nodes[inode]]
+        icol[icrow[inode]:icrow[inode + 1]] = i_neighb_nodes[inode, :n_neighb_nodes[inode]]
 
     if csr_neighb_nodes is None:
-        csr_neighb_nodes = th.sparse_csr_tensor(icrow, icol, dummy)
+        csr_neighb_nodes = th.sparse_csr_tensor(icrow, icol, dummy, size=(nnodes, nnodes))
 
     return csr_neighb_nodes

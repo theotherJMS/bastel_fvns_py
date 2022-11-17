@@ -328,6 +328,38 @@ class MockMixedMesh:
         3, 5, 5, 6, 5, 5, 3,
         3, 4, 4, 3, 4, 4, 3,
     ], dtype=INDEX)
+    csr_neighb_nodes: th.Tensor = th.sparse_csr_tensor(
+        crow_indices=th.tensor([
+            0, 3, 8, 11, 14,
+            17, 20, 25, 30, 36, 41, 46,
+            49, 52, 56, 60, 63, 67, 71,
+            74,
+        ], dtype=INDEX),
+        col_indices=th.tensor([
+            1, 5, 11,
+            0, 2, 4, 6, 10,
+            1, 3, 7,
+            2, 4, 8,
+            1, 3, 9,
+
+            0, 6, 12,
+            1, 5, 7, 12, 13,
+            2, 6, 8, 13, 14,
+            3, 7, 9, 14, 15, 16,
+            4, 8, 10, 16, 17,
+            1, 9, 11, 17, 18,
+            0, 10, 18,
+
+            5, 6, 13,
+            6, 7, 12, 14,
+            7, 8, 13, 15,
+            8, 14, 16,
+            8, 9, 15, 17,
+            9, 10, 16, 18,
+            10, 11, 17,
+        ], dtype=INDEX),
+        values=th.ones(74, dtype=th.bool), size=(19, 19)
+    )
 
 
 ################################################################################
@@ -448,7 +480,9 @@ class TestCreateNeighbNodesCSR(unittest.TestCase):
     def test(self):
         mock = MockMixedMesh()
         neighb_nodes_csr = msh.create_neighb_nodes_csr(mock.n_neighb_nodes, mock.i_neighb_nodes)
-        pass
+        v_act = neighb_nodes_csr.values()
+
+        assert_close(neighb_nodes_csr, mock.csr_neighb_nodes)
 
 
 ################################################################################
