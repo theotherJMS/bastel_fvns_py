@@ -503,11 +503,11 @@ class TestCalcNNeighbNodes(unittest.TestCase):
 
     ############################################################################
     def test_mixed_mesh(self):
-        i_neighb_nodes, n_neighb_nodes = msh.calc_neighb_nodes(MockMixedMesh.x_node.size(0), MockMixedMesh.i_corners,
-                                                               MockMixedMesh.n_corners, 8)
         mock = MockMixedMesh()
-        assert_close(n_neighb_nodes, MockMixedMesh.n_neighb_nodes)
-        assert_close(i_neighb_nodes[:, :6], MockMixedMesh.i_neighb_nodes)
+        i_neighb_nodes, n_neighb_nodes = msh.calc_neighb_nodes(mock.x_node.size(0), mock.i_corners,
+                                                               mock.n_corners, 8)
+        assert_close(n_neighb_nodes, mock.n_neighb_nodes)
+        assert_close(i_neighb_nodes[:, :6], mock.i_neighb_nodes)
 
     ############################################################################
     def test_quad_mesh(self):
@@ -534,7 +534,6 @@ class TestCreateNeighbNodesCSR(unittest.TestCase):
     def test_mixedmesh(self):
         mock = MockMixedMesh()
         neighb_nodes_csr = msh.create_neighb_nodes_csr(mock.n_neighb_nodes, mock.i_neighb_nodes)
-        v_act = neighb_nodes_csr.values()
 
         assert_close(neighb_nodes_csr, mock.csr_neighb_nodes)
 
@@ -546,7 +545,7 @@ class TestCreateNeighbNodesCSR(unittest.TestCase):
 
         assert_close(neighb_nodes_csr, mock.csr_neighb_nodes)
 
-   ############################################################################
+    ############################################################################
     def test_trimesh(self):
         mock = MockTriMesh()
         neighb_nodes_csr = msh.create_neighb_nodes_csr(mock.n_neighb_nodes, mock.i_neighb_nodes)
