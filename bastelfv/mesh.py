@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import torch as th
-from bastelfv.util import DATA, INDEX
+from bastelfv.util import INDEX
 
 DEFAULT_N_MAX_CORNERS: INDEX = 4
 DEFAULT_N_MAX_ELEMS_PER_NODE: INDEX = 4
@@ -12,6 +12,7 @@ DEFAULT_N_MAX_NEIGHB_NODES: INDEX = 8
 ################################################################################
 @dataclass
 class Mesh:
+
     # Base data
     x_node: th.DoubleTensor = None
     corners: th.IntTensor = None
@@ -53,14 +54,6 @@ class Mesh:
     @property
     def n_bdry_faces(self):
         return 0 if self.i_bdry_face is None or self.bdry_id is None else self.i_bdry_face.size(0)
-
-
-################################################################################
-################################################################################
-def calc_elem_centroids(mesh: Mesh) -> (th.DoubleTensor, th.DoubleTensor):
-    centroids_tri = th.mean(mesh.corners, dim=-1)
-    centroids_quad = th.mean(mesh.iquad, dim=-1)
-    return centroids_tri, centroids_quad
 
 
 ################################################################################
@@ -141,6 +134,12 @@ def create_neighb_nodes_csr(n_neighb_nodes, i_neighb_nodes, csr_neighb_nodes=Non
         csr_neighb_nodes = th.sparse_csr_tensor(icrow, icol, dummy, size=(nnodes, nnodes))
 
     return csr_neighb_nodes
+
+
+################################################################################
+################################################################################
+def calc_faces(corners, n_corners, ):
+    pass
 
 
 ################################################################################
